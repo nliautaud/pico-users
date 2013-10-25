@@ -84,7 +84,9 @@ $settings['rights'] = array
 
 ### Login and logout
 
-**TL;DR** : You can include a basic login/logout form anywhere with the Twig variable `{{ login_form }}`.
+You can include a basic login/logout form anywhere with the Twig variable :
+
+	{{ login_form }}
 
 A login form, in pages or themes, would send by *POST* a login and password :
 
