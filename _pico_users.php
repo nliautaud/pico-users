@@ -190,6 +190,7 @@ class _Pico_Users
 	 */
 	private function is_authorized($url)
 	{
+		if (!$this->rights) return true;
 		foreach ($this->rights as $auth_path => $auth_user )
 		{
 			// url is concerned by this rule and user is not (unauthorized)
