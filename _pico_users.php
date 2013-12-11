@@ -13,6 +13,7 @@ class _Pico_Users
 	private $users;
 	private $rights;
 	private $base_url;
+	private $hash_type;
 
 	// Pico hooks ---------------
 
@@ -24,6 +25,11 @@ class _Pico_Users
 		$this->base_url = $settings['base_url'];
 		$this->users = @$settings['users'];
 		$this->rights = @$settings['rights'];
+		if (in_array($settings['hash_type'], hash_algos())) {
+			$this->hash_type = $settings['hash_type'];
+		} else {
+			$this->hash_type = "sha1";
+		}
 
 		$this->user = '';
 		$this->check_login();
@@ -113,7 +119,7 @@ class _Pico_Users
 	 */
 	function fingerprint()
 	{
-		return sha1('pico'
+		return hash($this->hash_type, 'pico'
 				.$_SERVER['HTTP_USER_AGENT']
 				.$_SERVER['REMOTE_ADDR']
 				.$_SERVER['SCRIPT_NAME']
@@ -128,7 +134,7 @@ class _Pico_Users
 	 */
 	function login($name, $pass, $fp)
 	{
-		$users = $this->search_users($name, sha1($pass));
+		$users = $this->search_users($name, hash($this->hash_type, $pass));
 		if (!$users) return false;
 		// register
 		$this->user = $users[0];
@@ -158,7 +164,7 @@ class _Pico_Users
 	 * Return a list of users and passwords from the configuration file,
 	 * corresponding to the given user name.
 	 * @param  string $name  the user name, like "username"
-	 * @param  string $pass  the user password hash (sha1)
+	 * @param  string $pass  the user password hash (hash)
 	 * @return array        the list of results in pairs "path/group/username" => "hash"
 	 */
 	function search_users( $name, $pass = null, $users = null , $path = '' )

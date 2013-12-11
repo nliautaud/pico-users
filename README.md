@@ -22,7 +22,7 @@ Create a new setting "*users*" in your Pico `config.php` file. This setting is a
 	username => 2cc13a9e718d3d3051ac1f0ba024a2ff77485f4b
 	otheruser => 12dea96fec20593566ab75692c9949596833adc9
 
-To convert a password, you may use an online tool like [sha1.cz](http://sha1.cz) or [sha1.fr](http://sha1.fr)
+To convert a password, you may use an online tool like [sha1.cz](http://sha1.cz) or [sha1.fr](http://sha1.fr). Alternatively you can issue this shell command: `php -r "echo hash('sha1', 'MYPASSWORD');"`.
 
 You can create groups of users by using sub-arrays. Users are defined by their *user path* You will be able to give rights to specific groups.
 
@@ -81,6 +81,15 @@ $settings['rights'] = array
 	'just-for-john' => 'editors/john'
 );
 ```
+
+### Using another hash algorithm
+
+By default sha1 will be used, but you can change this in your `config.php`:
+
+```php
+$config['hash_type'] = 'sha256';
+```
+
 
 ### Login and logout
 
