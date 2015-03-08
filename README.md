@@ -1,6 +1,6 @@
 # Pico Users
 
-A hierarchical users and rights system plugin for [Pico CMS](http://pico.dev7studios.com).
+A hierarchical users and rights system plugin for [Pico CMS](http://pico.dev7studios.com). There is a port for [Phile CMS](https://github.com/PhileCMS/Phile) by [pschmitt](https://github.com/pschmitt) : [phileUsers](https://github.com/pschmitt/phileUsers).
 
 Login and logout system, unlimited users and hierarchical user groups, simple rights management.
 
