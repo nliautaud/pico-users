@@ -25,7 +25,7 @@ class _Pico_Users
 		$this->base_url = $settings['base_url'];
 		$this->users = @$settings['users'];
 		$this->rights = @$settings['rights'];
-		if (in_array($settings['hash_type'], hash_algos())) {
+		if (isset($settings['hash_type']) && in_array($settings['hash_type'], hash_algos())) {
 			$this->hash_type = $settings['hash_type'];
 		} else {
 			$this->hash_type = "sha1";
