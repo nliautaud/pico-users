@@ -167,7 +167,7 @@ class _Pico_Users
 	 * @param  string $pass  the user password hash (hash)
 	 * @return array        the list of results in pairs "path/group/username" => "hash"
 	 */
-	function search_users( $name, $pass = null, $users = null , $path = '' )
+	function search_users( $name, $pass = null, $users = array() , $path = '' )
 	{
 		if (!$users) $users = $this->users;
 		if ($path) $path .= '/';
