@@ -6,7 +6,6 @@ Features login and logout system, unlimited users and hierarchical user groups, 
 
 * [Installation](#installation)
 * [Settings](#users-and-groups)
-  * [Example](#example)
   * [Users and groups](#users-and-groups)
   * [Rights](#rights)
 * [Login and logout](#login-and-logout)
@@ -22,8 +21,25 @@ Copy `PicoUsers.php` to the `plugins/` directory of your Pico Project.
 Users, rights and others settings should be stored in Pico `config/config.php` file.
 
 ```php
-$config['users'] = array(...);
-$config['rights'] = array(...);
+$config['users'] = array(
+    'family' => array(
+        'mum' => 'f2d758f9e379babc91f1f5062e2d486a70008cccc3c5d47b75f645e588a0ea09',
+        'dad' => '6fe8ecbc1deafa51c2ecf088cf364eba1ceba9032ffbe2621e771b90ea93153d'
+    ),
+    'editors' => array(
+        'john' => '96d9632f363564cc3032521409cf22a852f2032eec099ed5967c0d000cec607a',
+        'marc' => '4697c20f8a70fcad6323e007d553cfe05d4433f81be70884ea3b4834b147f4c1',
+        'admins' => array(
+            'bill' => '623210167553939c87ed8c5f2bfe0b3e0684e12c3a3dd2513613c4e67263b5a1'
+        )
+    )
+);
+$config['rights'] = array(
+    'family-things' => 'family',
+    'secret/infos' => 'editors',
+    'secret/infos/' => 'editors/admins',
+    'just-for-john' => 'editors/john'
+);
 // $config['hash_type'] = 'sha256'; // by default, see php hash_algos
 ```
 
@@ -48,30 +64,6 @@ Users are defined by their user path. In the previous example, we have three use
 The setting "*rights*" is a flat list of rules, associating an URL to a user or a group of users to whom this path is reserved.
 
 You can target a specific page or all pages in a directory by using or not a trailing slash.
-
-### Example
-
-```php
-$config['users'] = array(
-    'family' => array(
-        'mum' => 'f2d758f9e379babc91f1f5062e2d486a70008cccc3c5d47b75f645e588a0ea09',
-        'dad' => '6fe8ecbc1deafa51c2ecf088cf364eba1ceba9032ffbe2621e771b90ea93153d'
-    ),
-    'editors' => array(
-        'john' => '96d9632f363564cc3032521409cf22a852f2032eec099ed5967c0d000cec607a',
-        'marc' => '4697c20f8a70fcad6323e007d553cfe05d4433f81be70884ea3b4834b147f4c1',
-        'admins' => array(
-            'bill' => '623210167553939c87ed8c5f2bfe0b3e0684e12c3a3dd2513613c4e67263b5a1'
-        )
-    )
-);
-$config['rights'] = array(
-    'family-things' => 'family',
-    'secret/infos' => 'editors',
-    'secret/infos/' => 'editors/admins',
-    'just-for-john' => 'editors/john'
-);
-```
 
 ## Login and logout
 
