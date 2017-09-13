@@ -3,11 +3,12 @@
  * A hierarchical users and rights system plugin for Pico.
  *
  * @author	Nicolas Liautaud
- * @link	http://nliautaud.fr
- * @link    http://pico.dev7studios.com
- * @license http://opensource.org/licenses/MIT
+ * @link	https://github.com/nliautaud/pico-users
+ * @link    http://picocms.org
+ * @license http://opensource.org/licenses/MIT The MIT License
+ * @version 0.2
  */
-class _Pico_Users
+final class PicoUsers extends AbstractPicoPlugin
 {
 	private $user;
 	private $users;
@@ -15,18 +16,28 @@ class _Pico_Users
 	private $base_url;
 	private $hash_type;
 
-	// Pico hooks ---------------
+    /**
+     * This plugin is enabled by default
+     *
+     * @see AbstractPicoPlugin::$enabled
+     * @var boolean
+     */
+	 protected $enabled = true;
 
-	/**
-	 * Store settings and define the current user.
-	 */
-	public function config_loaded(&$settings)
-	{
-		$this->base_url = $settings['base_url'];
-		$this->users = @$settings['users'];
-		$this->rights = @$settings['rights'];
-		if (isset($settings['hash_type']) && in_array($settings['hash_type'], hash_algos())) {
-			$this->hash_type = $settings['hash_type'];
+    /**
+     * Triggered after Pico has read its configuration
+     *
+     * @see    Pico::getConfig()
+     * @param  array &$config array of config variables
+     * @return void
+     */
+	 public function onConfigLoaded(array &$config)
+	 {
+		$this->base_url = rtrim($config['base_url'], '/') . '/';
+		$this->users = @$config['users'];
+		$this->rights = @$config['rights'];
+		if (isset($config['hash_type']) && in_array($config['hash_type'], hash_algos())) {
+			$this->hash_type = $config['hash_type'];
 		} else {
 			$this->hash_type = "sha1";
 		}
@@ -34,23 +45,43 @@ class _Pico_Users
 		$this->user = '';
 		$this->check_login();
 	}
-	/**
-	 * If the requested url is unauthorized for the current user
-	 * display page "403" and send 403 headers.
-	 */
-	public function request_url(&$url)
-	{
+    /**
+     * Triggered after Pico has evaluated the request URL
+     *
+     * @see    Pico::getRequestUrl()
+     * @param  string &$url part of the URL describing the requested contents
+     * @return void
+     */
+	 public function onRequestUrl(&$url)
+	 {
 		$page_url = rtrim($url, '/');
-		if (!$this->is_authorized($this->base_url . '/' . $page_url)) {
+		if (!$this->is_authorized($this->base_url . $page_url)) {
 			$url = '403';
 			header('HTTP/1.1 403 Forbidden');
 		}
 	}
-	/**
-	 * Filter the list of pages according to rights of current user.
-	 */
-	public function get_pages(&$pages, &$current_page, &$prev_page, &$next_page)
-	{
+    /**
+     * Triggered after Pico has read all known pages
+     *
+     * See {@link DummyPlugin::onSinglePageLoaded()} for details about the
+     * structure of the page data.
+     *
+     * @see    Pico::getPages()
+     * @see    Pico::getCurrentPage()
+     * @see    Pico::getPreviousPage()
+     * @see    Pico::getNextPage()
+     * @param  array[]    &$pages        data of all known pages
+     * @param  array|null &$currentPage  data of the page being served
+     * @param  array|null &$previousPage data of the previous page
+     * @param  array|null &$nextPage     data of the next page
+     * @return void
+     */
+    public function onPagesLoaded(
+        array &$pages,
+        array &$currentPage = null,
+        array &$previousPage = null,
+        array &$nextPage = null
+    ) {
 		// get sorted list of urls, for :
 		// TODO prev_page & next_page as prev and next allowed pages
 		$pages_urls = array();
@@ -65,13 +96,24 @@ class _Pico_Users
 			}
 		}
 	}
-	/**
-	 * Register a basic login form and user path in Twig variables.
-	 */
-	public function before_render(&$twig_vars, &$twig)
-	{
-		$twig_vars['login_form'] = $this->html_form();
-		$twig_vars['user'] = $this->user;
+    /**
+     * Triggered before Pico renders the page
+     *
+     * @see    Pico::getTwig()
+     * @see    DummyPlugin::onPageRendered()
+     * @param  Twig_Environment &$twig          twig template engine
+     * @param  array            &$twigVariables template variables
+     * @param  string           &$templateName  file name of the template
+     * @return void
+     */
+    public function onPageRendering(Twig_Environment &$twig, array &$twigVariables, &$templateName)
+    {
+		$twigVariables['login_form'] = $this->html_form();
+		if ($this->user) {
+			$twigVariables['user'] = $this->user;
+			$twigVariables['username'] = basename($this->user);
+			$twigVariables['usergroup'] = dirname($this->user);
+		}
 	}
 
 
@@ -154,9 +196,10 @@ class _Pico_Users
 			<input type="submit" value="login" />
 		</form>';
 
-		return basename($this->user) . ' (' . dirname($this->user) . ')
+		$userGroup = dirname($this->user);
+		return basename($this->user) . ($userGroup != '.' ? "($userGroup)":'') . '
 		<form method="post" action="" >
-			<input type="submit" value="logout" />
+			<input type="submit" name="logout" value="logout" />
 		</form>';
 	}
 
@@ -200,7 +243,7 @@ class _Pico_Users
 		foreach ($this->rights as $auth_path => $auth_user )
 		{
 			// url is concerned by this rule and user is not (unauthorized)
-			if ($this->is_parent_path($this->base_url.'/'.$auth_path, $url)
+			if ($this->is_parent_path($this->base_url . $auth_path, $url)
 			&& !$this->is_parent_path($auth_user, $this->user) )
 			{
 				return false;
