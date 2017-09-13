@@ -2,136 +2,107 @@
 
 A hierarchical users and rights system plugin for [Pico CMS](http://pico.dev7studios.com). There is a port for [Phile CMS](https://github.com/PhileCMS/Phile) by [pschmitt](https://github.com/pschmitt) : [phileUsers](https://github.com/pschmitt/phileUsers).
 
-Login and logout system, unlimited users and hierarchical user groups, simple rights management.
+Features login and logout system, unlimited users and hierarchical user groups, simple rights management.
 
 * [Installation](#installation)
-* [Users management](#users-management)
-* [Rights management](#rights-management)
+* [Settings](#users-and-groups)
+  * [Example](#example)
+  * [Users and groups](#users-and-groups)
+  * [Rights](#rights)
 * [Login and logout](#login-and-logout)
 * [Error page](#error-page)
 
 
-### Installation
+## Installation
 
-Copy `_pico_users.php` to the `plugins/` directory of your Pico Project.
+Copy `PicoUsers.php` to the `plugins/` directory of your Pico Project.
 
-### Users management
+## Settings
 
-Create a new setting "*users*" in your Pico `config.php` file. This setting is a list of all the users and their passwords, stored as sha1 strings :
-
-	username => 2cc13a9e718d3d3051ac1f0ba024a2ff77485f4b
-	otheruser => 12dea96fec20593566ab75692c9949596833adc9
-
-To convert a password, you may use an online tool like [sha1.cz](http://sha1.cz) or [sha1.fr](http://sha1.fr). Alternatively you can issue this shell command: `php -r "echo hash('sha1', 'MYPASSWORD');"`.
-
-You can create groups of users by using sub-arrays. Users are defined by their *user path* You will be able to give rights to specific groups.
-
-	group1
-		john => 2cc13a9e718d3d3051ac1f0ba024a2ff77485f4b
-		marc => 12dea96fec20593566ab75692c9949596833adc9
-	group2
-		bill => 3cbcd90adc4b192a87a625850b7f231caddf0eb3
-
-And above all, you can nest groups to create hierarchical systems :
-
-	john => 2cc13a9e718d3d3051ac1f0ba024a2ff77485f4b
-	foo
-		marc => 9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684
-		bar
-			bill => 3cbcd90adc4b192a87a625850b7f231caddf0eb3
-
-In the previous example, bill is defined by `foo/bar/bill` and have the rights of the two groups, when john is just defined by `john` ant don't have the rights of any group.
-
-Here is an example of a typical hierarchy :
+Users, rights and others settings should be stored in Pico `config/config.php` file.
 
 ```php
-$settings['users'] = array
-(
-	'family' => array(
-		'mum' => '2cc13a9e718d3d3051ac1f0ba024a2ff77485f4b',
-		'dad' => '12dea96fec20593566ab75692c9949596833adc9'
-	)
-	'editors' => array(
-		'john' => '9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684',
-		'marc' => '12dea96fec20593566ab75692c9949596833adc9'
-		'admins' => array(
-			'bill' => '3cbcd90adc4b192a87a625850b7f231caddf0eb3'
-		)
-	)
+$config['users'] = array(...);
+$config['rights'] = array(...);
+// $config['hash_type'] = 'sha256'; // by default, see php hash_algos
+```
+
+### Users and groups
+
+The setting "*users*" is an array of all the users and their hashed passwords.
+
+> There is numerous command line or online tools to hash a string, depending on the algorithm. PicoUsers uses `sha256` by default, and you can change it using a `hash_type` config setting.
+
+You can create groups of users by using sub-arrays, and nest groups to create hierarchical systems.
+
+    john => 2cc13a9e718d3d3051ac1f0ba024a2ff77485f4b
+    editors
+        marc => 9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684
+        admins
+            bill => 3cbcd90adc4b192a87a625850b7f231caddf0eb3
+
+Users are defined by their user path. In the previous example, we have three users : `john` and `editors/marc` and `editors/admins/bill`. Bill will inherit the rights of its two groups, when john don't have the rights of any group.
+
+### Rights
+
+The setting "*rights*" is a flat list of rules, associating an URL to a user or a group of users to whom this path is reserved.
+
+You can target a specific page or all pages in a directory by using or not a trailing slash.
+
+### Example
+
+```php
+$config['users'] = array(
+    'family' => array(
+        'mum' => 'f2d758f9e379babc91f1f5062e2d486a70008cccc3c5d47b75f645e588a0ea09',
+        'dad' => '6fe8ecbc1deafa51c2ecf088cf364eba1ceba9032ffbe2621e771b90ea93153d'
+    ),
+    'editors' => array(
+        'john' => '96d9632f363564cc3032521409cf22a852f2032eec099ed5967c0d000cec607a',
+        'marc' => '4697c20f8a70fcad6323e007d553cfe05d4433f81be70884ea3b4834b147f4c1',
+        'admins' => array(
+            'bill' => '623210167553939c87ed8c5f2bfe0b3e0684e12c3a3dd2513613c4e67263b5a1'
+        )
+    )
+);
+$config['rights'] = array(
+    'family-things' => 'family',
+    'secret/infos' => 'editors',
+    'secret/infos/' => 'editors/admins',
+    'just-for-john' => 'editors/john'
 );
 ```
 
-### Rights management
+## Login and logout
 
-Create a new setting "*rights*" in your Pico `config.php` file.
+You can include a basic login/logout form with the Twig variable :
 
-This setting is a flat list of rules associating a path to a user or a group of users to whom this path is reserved. You can target a specific page or all pages in a directory by using or not a trailing slash.
+    {{ login_form }}
 
-	specific/page => this/user
-	all/files/in/here/ => this/usergroup
+Making a custom login form would simply require sending by *POST* a login and password or a logout order. The following variables may be used :
 
-Here is an example of such a setting :
+Twig | Example
+---|---
+`{{ user }}`|editors/john
+`{{ username }}`|john
+`{{ usergroup }}`|editors
 
-```php
-$settings['rights'] = array
-(
-	'family-things' => 'family',
-	'secret/infos' => 'editors',
-	'secret/infos/' => 'editors/admins',
-	'just-for-john' => 'editors/john'
-);
-```
-
-### Using another hash algorithm
-
-By default sha1 will be used, but you can change this in your `config.php`:
-
-```php
-$config['hash_type'] = 'sha256';
-```
-
-
-### Login and logout
-
-You can include a basic login/logout form anywhere with the Twig variable :
-
-	{{ login_form }}
-
-A login form, in pages or themes, would send by *POST* a login and password :
-
+For example :
 ```html
 <form method="post" action="">
-	<input type="text" name="login" />
-	<input type="password" name="password" />
-	<input type="submit" value="login" />
+{% if user %}
+    Logged as {{ username }} ({{ usergroup }})
+    (<input type="submit" name="logout" value="logout" />)
+{% else %}
+    <input type="text" name="login" />
+    <input type="password" name="password" />
+    <input type="submit" value="login" />
+{% endif %}
 </form>
 ```
 
-A logout form would send by *POST* a logout order :
+You may want a small login/logout in the site headers for example and a fancy login form in the [error page](#error-page).
 
-```html
-<form method="post" action="">
-	<input type="submit" name="logout" value="logout" />
-</form>
-```
-
-The Twig variable `{{ user }}` contains the logged user path. If empty, the user is not logged. Thus, a more complex form would adapt to the login state :
-
-```html
-<form method="post" action="">
-	{% if user %}
-	Logged as {{ user }}
-	(<input type="submit" name="logout" value="logout" />)
-	{% else %}
-	<input type="text" name="login" />
-	<input type="password" name="password" />
-	<input type="submit" value="login" />
-	{% endif %}
-</form>
-```
-
-For example, a small login/logout form might be included in the site headers, when a big login form might be included in the [error page](#error-page).
-
-### Error page
+## Error page
 
 When a visitor try to access to a restricted page, a *403 forbidden* header is sent, and the file `content/403.md` is shown. If there is no 403 page, the 404 one will be shown instead (and there will be no obvious clue that the requested page exists).
