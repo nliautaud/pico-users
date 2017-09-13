@@ -39,7 +39,7 @@ final class PicoUsers extends AbstractPicoPlugin
 		if (isset($config['hash_type']) && in_array($config['hash_type'], hash_algos())) {
 			$this->hash_type = $config['hash_type'];
 		} else {
-			$this->hash_type = "sha1";
+			$this->hash_type = "sha256";
 		}
 
 		$this->user = '';
