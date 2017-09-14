@@ -243,7 +243,7 @@ final class PicoUsers extends AbstractPicoPlugin
       */
     function get_user( $path )
     {
-        $parts = split('/', $path);
+        $parts = explode('/', $path);
         $curr = $this->users;
         foreach ($parts as $part) {
 			if(!isset($curr[$part])) return false;
