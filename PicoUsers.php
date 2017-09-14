@@ -10,11 +10,11 @@
  */
 final class PicoUsers extends AbstractPicoPlugin
 {
-	private $user;
-	private $users;
-	private $rights;
-	private $base_url;
-	private $hash_type;
+    private $user;
+    private $users;
+    private $rights;
+    private $base_url;
+    private $hash_type;
 
     /**
      * This plugin is enabled by default
@@ -22,7 +22,7 @@ final class PicoUsers extends AbstractPicoPlugin
      * @see AbstractPicoPlugin::$enabled
      * @var boolean
      */
-	 protected $enabled = true;
+     protected $enabled = true;
 
     /**
      * Triggered after Pico has read its configuration
@@ -31,20 +31,20 @@ final class PicoUsers extends AbstractPicoPlugin
      * @param  array &$config array of config variables
      * @return void
      */
-	 public function onConfigLoaded(array &$config)
-	 {
-		$this->base_url = rtrim($config['base_url'], '/') . '/';
-		$this->users = @$config['users'];
-		$this->rights = @$config['rights'];
-		if (isset($config['hash_type']) && in_array($config['hash_type'], hash_algos())) {
-			$this->hash_type = $config['hash_type'];
-		} else {
-			$this->hash_type = "sha256";
-		}
+     public function onConfigLoaded(array &$config)
+     {
+        $this->base_url = rtrim($config['base_url'], '/') . '/';
+        $this->users = @$config['users'];
+        $this->rights = @$config['rights'];
+        if (isset($config['hash_type']) && in_array($config['hash_type'], hash_algos())) {
+            $this->hash_type = $config['hash_type'];
+        } else {
+            $this->hash_type = "sha256";
+        }
 
-		$this->user = '';
-		$this->check_login();
-	}
+        $this->user = '';
+        $this->check_login();
+    }
     /**
      * Triggered after Pico has evaluated the request URL
      *
@@ -52,14 +52,14 @@ final class PicoUsers extends AbstractPicoPlugin
      * @param  string &$url part of the URL describing the requested contents
      * @return void
      */
-	 public function onRequestUrl(&$url)
-	 {
-		$page_url = rtrim($url, '/');
-		if (!$this->is_authorized($this->base_url . $page_url)) {
-			$url = '403';
-			header('HTTP/1.1 403 Forbidden');
-		}
-	}
+     public function onRequestUrl(&$url)
+     {
+        $page_url = rtrim($url, '/');
+        if (!$this->is_authorized($this->base_url . $page_url)) {
+            $url = '403';
+            header('HTTP/1.1 403 Forbidden');
+        }
+    }
     /**
      * Triggered after Pico has read all known pages
      *
@@ -82,20 +82,20 @@ final class PicoUsers extends AbstractPicoPlugin
         array &$previousPage = null,
         array &$nextPage = null
     ) {
-		// get sorted list of urls, for :
-		// TODO prev_page & next_page as prev and next allowed pages
-		$pages_urls = array();
-		foreach ($pages as $p) {
-			$pages_urls[] = $p['url'];
-		}
-		asort($pages_urls);
+        // get sorted list of urls, for :
+        // TODO prev_page & next_page as prev and next allowed pages
+        $pages_urls = array();
+        foreach ($pages as $p) {
+            $pages_urls[] = $p['url'];
+        }
+        asort($pages_urls);
 
-		foreach ($pages_urls as $page_id => $page_url ) {
-			if (!$this->is_authorized(rtrim($page_url, '/'))) {
-				unset($pages[$page_id]);
-			}
-		}
-	}
+        foreach ($pages_urls as $page_id => $page_url ) {
+            if (!$this->is_authorized(rtrim($page_url, '/'))) {
+                unset($pages[$page_id]);
+            }
+        }
+    }
     /**
      * Triggered before Pico renders the page
      *
@@ -108,168 +108,168 @@ final class PicoUsers extends AbstractPicoPlugin
      */
     public function onPageRendering(Twig_Environment &$twig, array &$twigVariables, &$templateName)
     {
-		$twigVariables['login_form'] = $this->html_form();
-		if ($this->user) {
-			$twigVariables['user'] = $this->user;
-			$twigVariables['username'] = basename($this->user);
-			$twigVariables['usergroup'] = dirname($this->user);
-		}
-	}
+        $twigVariables['login_form'] = $this->html_form();
+        if ($this->user) {
+            $twigVariables['user'] = $this->user;
+            $twigVariables['username'] = basename($this->user);
+            $twigVariables['usergroup'] = dirname($this->user);
+        }
+    }
 
 
-	// CORE ---------------
+    // CORE ---------------
 
-	/*
-	 * Check logout/login actions and session login.
-	 */
-	function check_login()
-	{
-		if (session_status() == PHP_SESSION_NONE) {
-		    session_start();
-		}
-		$fp = $this->fingerprint();
-		$post = $_POST; // to sanitize ?
+    /*
+     * Check logout/login actions and session login.
+     */
+    function check_login()
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        $fp = $this->fingerprint();
+        $post = $_POST; // to sanitize ?
 
-		// logout action
-		if (isset($post['logout'])) {
-			unset($_SESSION[$fp]);
-			return;
-		}
-		
-		// login action
-		if (isset($post['login'])
-		&& isset($post['hashedpass'])) {
-			$hashedpass = hash($this->hash_type, $post['hashedpass']);
-			return $this->login($post['login'], $hashedpass, $fp);
-		}
+        // logout action
+        if (isset($post['logout'])) {
+            unset($_SESSION[$fp]);
+            return;
+        }
+        
+        // login action
+        if (isset($post['login'])
+        && isset($post['hashedpass'])) {
+            $hashedpass = hash($this->hash_type, $post['hashedpass']);
+            return $this->login($post['login'], $hashedpass, $fp);
+        }
 
-		// session login (already logged)
+        // session login (already logged)
 
-		if (!isset($_SESSION[$fp])) return;
+        if (!isset($_SESSION[$fp])) return;
 
-		$name = $_SESSION[$fp]['name'];
-		$hashedpass = $_SESSION[$fp]['hashedpass'];
+        $name = $_SESSION[$fp]['name'];
+        $hashedpass = $_SESSION[$fp]['hashedpass'];
 
-		$logged = $this->login($name, $hashedpass, $fp);
-		if ($logged) return true;
+        $logged = $this->login($name, $hashedpass, $fp);
+        if ($logged) return true;
 
-		unset($_SESSION[$fp]);
-		return;
-	}
-	/**
-	 * Return session fingerprint hash.
-	 * @return string
-	 */
-	function fingerprint()
-	{
-		return hash($this->hash_type, 'pico'
-				.$_SERVER['HTTP_USER_AGENT']
-				.$_SERVER['REMOTE_ADDR']
-				.$_SERVER['SCRIPT_NAME']
-				.session_id());
-	}
-	/**
-	 * Try to login with the given name and password.
-	 * @param string $name the login name
-	 * @param string $hashedpass the hashed login password
-	 * @param string $fp session fingerprint hash
-	 * @return boolean operation result
-	 */
-	function login($name, $hashedpass, $fp)
-	{
-		$users = $this->search_users($name, $hashedpass);
-		if (!$users) return false;
-		// register
-		$this->user = $users[0];
-		$_SESSION[$fp]['name'] = $name;
-		$_SESSION[$fp]['hashedpass'] = $hashedpass;
-		return true;
-	}
-	/*
-	 * Return a simple login / logout form.
-	 */
-	function html_form()
-	{
-		if (!$this->user) return '
-		<form method="post" action="">
-			<input type="text" name="login" />
-			<input type="password" name="hashedpass" />
-			<input type="submit" value="login" />
-		</form>';
+        unset($_SESSION[$fp]);
+        return;
+    }
+    /**
+     * Return session fingerprint hash.
+     * @return string
+     */
+    function fingerprint()
+    {
+        return hash($this->hash_type, 'pico'
+                .$_SERVER['HTTP_USER_AGENT']
+                .$_SERVER['REMOTE_ADDR']
+                .$_SERVER['SCRIPT_NAME']
+                .session_id());
+    }
+    /**
+     * Try to login with the given name and password.
+     * @param string $name the login name
+     * @param string $hashedpass the hashed login password
+     * @param string $fp session fingerprint hash
+     * @return boolean operation result
+     */
+    function login($name, $hashedpass, $fp)
+    {
+        $users = $this->search_users($name, $hashedpass);
+        if (!$users) return false;
+        // register
+        $this->user = $users[0];
+        $_SESSION[$fp]['name'] = $name;
+        $_SESSION[$fp]['hashedpass'] = $hashedpass;
+        return true;
+    }
+    /*
+     * Return a simple login / logout form.
+     */
+    function html_form()
+    {
+        if (!$this->user) return '
+        <form method="post" action="">
+            <input type="text" name="login" />
+            <input type="password" name="hashedpass" />
+            <input type="submit" value="login" />
+        </form>';
 
-		$userGroup = dirname($this->user);
-		return basename($this->user) . ($userGroup != '.' ? "($userGroup)":'') . '
-		<form method="post" action="" >
-			<input type="submit" name="logout" value="logout" />
-		</form>';
-	}
+        $userGroup = dirname($this->user);
+        return basename($this->user) . ($userGroup != '.' ? "($userGroup)":'') . '
+        <form method="post" action="" >
+            <input type="submit" name="logout" value="logout" />
+        </form>';
+    }
 
-	/**
-	 * Return a list of users and passwords from the configuration file,
-	 * corresponding to the given user name.
-	 * @param  string $name  the user name, like "username"
-	 * @param  string $hashedpass  the user password hash
-	 * @return array  the list of results in pairs "path/group/username" => "hash"
-	 */
-	function search_users( $name, $hashedpass = null, $users = null , $path = '' )
-	{
-		if ($users === null) $users = $this->users;
-		if ($path) $path .= '/';
-		$results = array();
-		foreach ($users as $key => $val)
-		{
-			if (is_array($val)) {
-				$results = array_merge(
-					$results,
-					$this->search_users($name, $hashedpass, $val, $path.$key)
-				);
-				continue;
-			}
-			if (($name === null || $name === $key )
-			 && ($hashedpass === null || $hashedpass === $val )) {
-				$results[] = $path.$name;
-			}
-		}
-		return $results;
-	}
+    /**
+     * Return a list of users and passwords from the configuration file,
+     * corresponding to the given user name.
+     * @param  string $name  the user name, like "username"
+     * @param  string $hashedpass  the user password hash
+     * @return array  the list of results in pairs "path/group/username" => "hash"
+     */
+    function search_users( $name, $hashedpass = null, $users = null , $path = '' )
+    {
+        if ($users === null) $users = $this->users;
+        if ($path) $path .= '/';
+        $results = array();
+        foreach ($users as $key => $val)
+        {
+            if (is_array($val)) {
+                $results = array_merge(
+                    $results,
+                    $this->search_users($name, $hashedpass, $val, $path.$key)
+                );
+                continue;
+            }
+            if (($name === null || $name === $key )
+             && ($hashedpass === null || $hashedpass === $val )) {
+                $results[] = $path.$name;
+            }
+        }
+        return $results;
+    }
 
-	/**
-	 * Return if the user is allowed to see the given page url.
-	 * @param  string  $url a page url
-	 * @return boolean
-	 */
-	private function is_authorized($url)
-	{
-		if (!$this->rights) return true;
-		foreach ($this->rights as $auth_path => $auth_user )
-		{
-			// url is concerned by this rule and user is not (unauthorized)
-			if ($this->is_parent_path($this->base_url . $auth_path, $url)
-			&& !$this->is_parent_path($auth_user, $this->user) )
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-	/**
-	 * Return if a path is parent of another.
-	 * 	some/path is parent of some/path/child
-	 *  some/path is not parent of some/another/path
-	 * @param  string  $parent the parent (shorter) path
-	 * @param  string  $child  the child (longer) path
-	 * @return boolean
-	 */
-	private static function is_parent_path($parent, $child)
-	{
-		if (!$parent || !$child) return false;
-		if (	$parent == $child) return true;
+    /**
+     * Return if the user is allowed to see the given page url.
+     * @param  string  $url a page url
+     * @return boolean
+     */
+    private function is_authorized($url)
+    {
+        if (!$this->rights) return true;
+        foreach ($this->rights as $auth_path => $auth_user )
+        {
+            // url is concerned by this rule and user is not (unauthorized)
+            if ($this->is_parent_path($this->base_url . $auth_path, $url)
+            && !$this->is_parent_path($auth_user, $this->user) )
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    /**
+     * Return if a path is parent of another.
+     * 	some/path is parent of some/path/child
+     *  some/path is not parent of some/another/path
+     * @param  string  $parent the parent (shorter) path
+     * @param  string  $child  the child (longer) path
+     * @return boolean
+     */
+    private static function is_parent_path($parent, $child)
+    {
+        if (!$parent || !$child) return false;
+        if (	$parent == $child) return true;
 
-		if (strpos($child, $parent) === 0) {
-			if (substr($parent,-1) == '/') return true;
-			elseif ($child[strlen($parent)] == '/') return true;
-		}
-		return false;
-	}
+        if (strpos($child, $parent) === 0) {
+            if (substr($parent,-1) == '/') return true;
+            elseif ($child[strlen($parent)] == '/') return true;
+        }
+        return false;
+    }
 }
 ?>
