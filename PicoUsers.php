@@ -135,11 +135,12 @@ final class PicoUsers extends AbstractPicoPlugin
 			unset($_SESSION[$fp]);
 			return;
 		}
-
+		
 		// login action
 		if (isset($post['login'])
-		&& isset($post['password'])) {
-			return $this->login($post['login'], $post['password'], $fp);
+		&& isset($post['hashedpass'])) {
+			$hashedpass = hash($this->hash_type, $post['hashedpass']);
+			return $this->login($post['login'], $hashedpass, $fp);
 		}
 
 		// session login (already logged)
@@ -147,9 +148,9 @@ final class PicoUsers extends AbstractPicoPlugin
 		if (!isset($_SESSION[$fp])) return;
 
 		$name = $_SESSION[$fp]['name'];
-		$pass = $_SESSION[$fp]['password'];
+		$hashedpass = $_SESSION[$fp]['hashedpass'];
 
-		$logged = $this->login($name, $pass, $fp);
+		$logged = $this->login($name, $hashedpass, $fp);
 		if ($logged) return true;
 
 		unset($_SESSION[$fp]);
@@ -170,18 +171,18 @@ final class PicoUsers extends AbstractPicoPlugin
 	/**
 	 * Try to login with the given name and password.
 	 * @param string $name the login name
-	 * @param string $pass the login password
+	 * @param string $hashedpass the hashed login password
 	 * @param string $fp session fingerprint hash
 	 * @return boolean operation result
 	 */
-	function login($name, $pass, $fp)
+	function login($name, $hashedpass, $fp)
 	{
-		$users = $this->search_users($name, hash($this->hash_type, $pass));
+		$users = $this->search_users($name, $hashedpass);
 		if (!$users) return false;
 		// register
 		$this->user = $users[0];
 		$_SESSION[$fp]['name'] = $name;
-		$_SESSION[$fp]['password'] = $pass;
+		$_SESSION[$fp]['hashedpass'] = $hashedpass;
 		return true;
 	}
 	/*
@@ -192,7 +193,7 @@ final class PicoUsers extends AbstractPicoPlugin
 		if (!$this->user) return '
 		<form method="post" action="">
 			<input type="text" name="login" />
-			<input type="password" name="password" />
+			<input type="password" name="hashedpass" />
 			<input type="submit" value="login" />
 		</form>';
 
@@ -207,10 +208,10 @@ final class PicoUsers extends AbstractPicoPlugin
 	 * Return a list of users and passwords from the configuration file,
 	 * corresponding to the given user name.
 	 * @param  string $name  the user name, like "username"
-	 * @param  string $pass  the user password hash (hash)
-	 * @return array        the list of results in pairs "path/group/username" => "hash"
+	 * @param  string $hashedpass  the user password hash
+	 * @return array  the list of results in pairs "path/group/username" => "hash"
 	 */
-	function search_users( $name, $pass = null, $users = null , $path = '' )
+	function search_users( $name, $hashedpass = null, $users = null , $path = '' )
 	{
 		if ($users === null) $users = $this->users;
 		if ($path) $path .= '/';
@@ -220,12 +221,12 @@ final class PicoUsers extends AbstractPicoPlugin
 			if (is_array($val)) {
 				$results = array_merge(
 					$results,
-					$this->search_users($name, $pass, $val, $path.$key)
+					$this->search_users($name, $hashedpass, $val, $path.$key)
 				);
 				continue;
 			}
 			if (($name === null || $name === $key )
-			 && ($pass === null || $pass === $val )) {
+			 && ($hashedpass === null || $hashedpass === $val )) {
 				$results[] = $path.$name;
 			}
 		}
