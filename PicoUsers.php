@@ -1,5 +1,10 @@
 <?php
 /**
+ * Optionnal support of PHP<5.5 password encryption compatibility file
+ * @link https://github.com/ircmaxell/password_compat
+ */
+if (file_exists('lib/password.php')) include 'lib/password.php';
+/**
  * A hierarchical users and rights system plugin for Pico.
  *
  * @author	Nicolas Liautaud
@@ -137,23 +142,25 @@ final class PicoUsers extends AbstractPicoPlugin
         
         // login action
         if (isset($_POST['login'])
-        && isset($_POST['hashedpass'])) {
-            $hashedpass = hash($this->hash_type, $_POST['hashedpass']);
-            return $this->login($_POST['login'], $hashedpass, $fp);
+        && isset($_POST['pass'])) {
+            $fallback_hash = hash($this->hash_type, $_POST['pass']);
+            $users = $this->search_users($_POST['login'], $_POST['pass'], $fallback_hash);
+            if (!$users) return;
+            $this->log_user($users[0], $fp);
+            return;
         }
 
         // session login (already logged)
-
         if (!isset($_SESSION[$fp])) return;
 
-        $name = $_SESSION[$fp]['name'];
-        $hashedpass = $_SESSION[$fp]['hashedpass'];
-
-        $logged = $this->login($name, $hashedpass, $fp);
-        if ($logged) return true;
-
-        unset($_SESSION[$fp]);
-        return;
+        $path = $_SESSION[$fp]['path'];
+        $hash = $_SESSION[$fp]['hash'];
+        $user = $this->get_user($path);
+        
+        if ($user['hash'] === $hash) {
+            $this->log_user($user, $fp);
+        }
+        else unset($_SESSION[$fp]);
     }
     /**
      * Return session fingerprint hash.
@@ -168,21 +175,14 @@ final class PicoUsers extends AbstractPicoPlugin
                 .session_id());
     }
     /**
-     * Try to login with the given name and password.
-     * @param string $name the login name
-     * @param string $hashedpass the hashed login password
+     * Register the given user infos.
+     * @param string $user the user infos
      * @param string $fp session fingerprint hash
-     * @return boolean operation result
      */
-    function login($name, $hashedpass, $fp)
+    function log_user($user, $fp)
     {
-        $users = $this->search_users($name, $hashedpass);
-        if (!$users) return false;
-        // register
-        $this->user = $users[0];
-        $_SESSION[$fp]['name'] = $name;
-        $_SESSION[$fp]['hashedpass'] = $hashedpass;
-        return true;
+        $this->user = $user['path'];
+        $_SESSION[$fp] = $user;
     }
     /*
      * Return a simple login / logout form.
@@ -192,12 +192,12 @@ final class PicoUsers extends AbstractPicoPlugin
         if (!$this->user) return '
         <form method="post" action="">
             <input type="text" name="login" />
-            <input type="password" name="hashedpass" />
+            <input type="password" name="pass" />
             <input type="submit" value="login" />
         </form>';
 
         $userGroup = dirname($this->user);
-        return basename($this->user) . ($userGroup != '.' ? "($userGroup)":'') . '
+        return basename($this->user) . ($userGroup != '.' ? " ($userGroup)":'') . '
         <form method="post" action="" >
             <input type="submit" name="logout" value="logout" />
         </form>';
@@ -207,29 +207,51 @@ final class PicoUsers extends AbstractPicoPlugin
      * Return a list of users and passwords from the configuration file,
      * corresponding to the given user name.
      * @param  string $name  the user name, like "username"
-     * @param  string $hashedpass  the user password hash
+     * @param  string $pass  the user pass
      * @return array  the list of results in pairs "path/group/username" => "hash"
      */
-    function search_users( $name, $hashedpass = null, $users = null , $path = '' )
+    function search_users( $name, $pass, $fallback_hash, $users = null , $path = '' )
     {
         if ($users === null) $users = $this->users;
         if ($path) $path .= '/';
         $results = array();
-        foreach ($users as $key => $val)
+        foreach ($users as $username => $userdata)
         {
-            if (is_array($val)) {
+            if (is_array($userdata)) {
                 $results = array_merge(
                     $results,
-                    $this->search_users($name, $hashedpass, $val, $path.$key)
+                    $this->search_users($name, $pass, $fallback_hash, $userdata, $path.$username)
                 );
                 continue;
             }
-            if (($name === null || $name === $key )
-             && ($hashedpass === null || $hashedpass === $val )) {
-                $results[] = $path.$name;
-            }
+
+            if ($name !== null && $name !== $username) continue;
+            
+			$passCheck = function_exists('password_verify') && password_verify($pass, $userdata);
+            if ($passCheck || ($fallback_hash === $userdata)) {
+				$results[] = array(
+					'path' => $path.$username,
+					'hash' => $userdata);
+			}
         }
         return $results;
+    }
+     /**
+      * Return a given user data.
+      * @param  string $name  the user path, like "foo/bar"
+      * @return array  the user data
+      */
+    function get_user( $path )
+    {
+        $parts = split('/', $path);
+        $curr = $this->users;
+        foreach ($parts as $part) {
+			if(!isset($curr[$part])) return false;
+            $curr = $curr[$part];
+        }
+        return array(
+			'path' => $path,
+			'hash' => $curr);
     }
 
     /**

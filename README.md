@@ -22,46 +22,45 @@ Users, rights and others settings should be stored in Pico `config/config.php` f
 
 ```php
 $config['users'] = array(
-    'family' => array(
-        'mum' => 'f2d758f9e379babc91f1f5062e2d486a70008cccc3c5d47b75f645e588a0ea09',
-        'dad' => '6fe8ecbc1deafa51c2ecf088cf364eba1ceba9032ffbe2621e771b90ea93153d'
-    ),
+    'john' => '$2a$08$kA7StQeZgyuEJnIrvypwEeuyjSqxrvavOBSf33n4yWSJFhbQAkO1W',
     'editors' => array(
-        'john' => '96d9632f363564cc3032521409cf22a852f2032eec099ed5967c0d000cec607a',
-        'marc' => '4697c20f8a70fcad6323e007d553cfe05d4433f81be70884ea3b4834b147f4c1',
+        'marc' => '$2a$08$V/En.8vnZFWGOwXvDvFYsO8PTq.KSA5eYTehICnErFnd3V.zzsj.K',
         'admins' => array(
-            'bill' => '623210167553939c87ed8c5f2bfe0b3e0684e12c3a3dd2513613c4e67263b5a1'
+            'bill' => '$2a$08$bCVTtxqH/VxWuHqrZQ/QiOEcvvbVjl9UD3mTf.7AnXhS90DXj5IZ6'
         )
+    ),
+    'family' => array(
+        'mum' => '$2a$08$qYtklDGOy/cCK1K0Zh8qROkFW3/V7gFgve.0GQv/sPmLYHm0jEiTi',
+        'dad' => '$2a$08$Eu7aKmOLz1Jme4iReWp6r.TfI2K3V3DyeRDV8oBS6gMtDPessqqru'
     )
 );
 $config['rights'] = array(
     'family-things' => 'family',
     'secret/infos' => 'editors',
     'secret/infos/' => 'editors/admins',
-    'just-for-john' => 'editors/john'
+    'just-for-john' => 'john'
 );
-// $config['hash_type'] = 'sha256'; // by default, see php hash_algos
 ```
 
 ### Users and groups
 
-The setting "*users*" is an array of all the users and their hashed passwords.
+The setting `users` is an array of users and hashed passwords.
 
-> There is numerous command line or online tools to hash a string, depending on the algorithm. PicoUsers uses `sha256` by default, and you can change it using a `hash_type` config setting.
+> **Encryption** : Passwords should be hashed with `bcrypt`. If [password_hash](https://secure.php.net/manual/en/function.password-hash.php) is not supported (PHP<5.5), you can add `bcrypt` support by placing [ircmaxell/password_compat](https://github.com/ircmaxell/password_compat) in a `lib/` directory next to PicoUsers. Finally, a simple hash algorythm can be used as a fallback (`sha256` by default, can be configured with the `hash_type` setting).
 
 You can create groups of users by using sub-arrays, and nest groups to create hierarchical systems.
 
-    john => 2cc13a9e718d3d3051ac1f0ba024a2ff77485f4b
+    john => hash
     editors
-        marc => 9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684
+        marc => hash
         admins
-            bill => 3cbcd90adc4b192a87a625850b7f231caddf0eb3
+            bill => hash
 
 Users are defined by their user path. In the previous example, we have three users : `john` and `editors/marc` and `editors/admins/bill`. Bill will inherit the rights of its two groups, when john don't have the rights of any group.
 
 ### Rights
 
-The setting "*rights*" is a flat list of rules, associating an URL to a user or a group of users to whom this path is reserved.
+The setting `rights` is a flat list of rules, associating an URL to a user or a group of users to whom this path is reserved.
 
 You can target a specific page or all pages in a directory by using or not a trailing slash.
 
