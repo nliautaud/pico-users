@@ -11,7 +11,7 @@ if (file_exists('lib/password.php')) include 'lib/password.php';
  * @link	https://github.com/nliautaud/pico-users
  * @link    http://picocms.org
  * @license http://opensource.org/licenses/MIT The MIT License
- * @version 0.2
+ * @version 0.2.1
  */
 final class PicoUsers extends AbstractPicoPlugin
 {
