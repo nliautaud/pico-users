@@ -1,9 +1,9 @@
 <?php
 /**
- * Optionnal support of PHP<5.5 password encryption compatibility file
+ * password_hash PHP<5.5 compatibility
  * @link https://github.com/ircmaxell/password_compat
  */
-if (file_exists('lib/password.php')) include 'lib/password.php';
+require_once('password.php');
 /**
  * A hierarchical users and rights system plugin for Pico.
  *
@@ -11,7 +11,7 @@ if (file_exists('lib/password.php')) include 'lib/password.php';
  * @link	https://github.com/nliautaud/pico-users
  * @link    http://picocms.org
  * @license http://opensource.org/licenses/MIT The MIT License
- * @version 0.2.1
+ * @version 0.2.2
  */
 final class PicoUsers extends AbstractPicoPlugin
 {
@@ -19,7 +19,6 @@ final class PicoUsers extends AbstractPicoPlugin
     private $users;
     private $rights;
     private $base_url;
-    private $hash_type;
 
     /**
      * This plugin is enabled by default
@@ -41,12 +40,6 @@ final class PicoUsers extends AbstractPicoPlugin
         $this->base_url = rtrim($config['base_url'], '/') . '/';
         $this->users = @$config['users'];
         $this->rights = @$config['rights'];
-        if (isset($config['hash_type']) && in_array($config['hash_type'], hash_algos())) {
-            $this->hash_type = $config['hash_type'];
-        } else {
-            $this->hash_type = "sha256";
-        }
-
         $this->user = '';
         $this->check_login();
     }
@@ -87,17 +80,9 @@ final class PicoUsers extends AbstractPicoPlugin
         array &$previousPage = null,
         array &$nextPage = null
     ) {
-        // get sorted list of urls, for :
-        // TODO prev_page & next_page as prev and next allowed pages
-        $pages_urls = array();
-        foreach ($pages as $p) {
-            $pages_urls[] = $p['url'];
-        }
-        asort($pages_urls);
-
-        foreach ($pages_urls as $page_id => $page_url ) {
-            if (!$this->is_authorized(rtrim($page_url, '/'))) {
-                unset($pages[$page_id]);
+        foreach ($pages as $id => $page ) {
+            if (!$this->is_authorized(rtrim($page['url'], '/'))) {
+                unset($pages[$id]);
             }
         }
     }
@@ -143,8 +128,7 @@ final class PicoUsers extends AbstractPicoPlugin
         // login action
         if (isset($_POST['login'])
         && isset($_POST['pass'])) {
-            $fallback_hash = hash($this->hash_type, $_POST['pass']);
-            $users = $this->search_users($_POST['login'], $_POST['pass'], $fallback_hash);
+            $users = $this->search_users($_POST['login'], $_POST['pass']);
             if (!$users) return;
             $this->log_user($users[0], $fp);
             return;
@@ -168,7 +152,7 @@ final class PicoUsers extends AbstractPicoPlugin
      */
     function fingerprint()
     {
-        return hash($this->hash_type, 'pico'
+        return hash('sha256', 'pico'
                 .$_SERVER['HTTP_USER_AGENT']
                 .$_SERVER['REMOTE_ADDR']
                 .$_SERVER['SCRIPT_NAME']
@@ -210,7 +194,7 @@ final class PicoUsers extends AbstractPicoPlugin
      * @param  string $pass  the user pass
      * @return array  the list of results in pairs "path/group/username" => "hash"
      */
-    function search_users( $name, $pass, $fallback_hash, $users = null , $path = '' )
+    function search_users( $name, $pass, $users = null , $path = '' )
     {
         if ($users === null) $users = $this->users;
         if ($path) $path .= '/';
@@ -220,19 +204,18 @@ final class PicoUsers extends AbstractPicoPlugin
             if (is_array($userdata)) {
                 $results = array_merge(
                     $results,
-                    $this->search_users($name, $pass, $fallback_hash, $userdata, $path.$username)
+                    $this->search_users($name, $pass, $userdata, $path.$username)
                 );
                 continue;
             }
 
             if ($name !== null && $name !== $username) continue;
             
-			$passCheck = function_exists('password_verify') && password_verify($pass, $userdata);
-            if ($passCheck || ($fallback_hash === $userdata)) {
-				$results[] = array(
-					'path' => $path.$username,
-					'hash' => $userdata);
-			}
+            if (!password_verify($pass, $userdata)) continue;
+
+            $results[] = array(
+                'path' => $path.$username,
+                'hash' => $userdata);
         }
         return $results;
     }

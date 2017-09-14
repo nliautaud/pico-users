@@ -14,7 +14,7 @@ Features login and logout system, unlimited users and hierarchical user groups, 
 
 ## Installation
 
-Copy `PicoUsers.php` to the `plugins/` directory of your Pico Project.
+Copy the `PicoUsers` directory to the `plugins/` directory of your Pico Project.
 
 ## Settings
 
@@ -26,7 +26,7 @@ $config['users'] = array(
     'editors' => array(
         'marc' => '$2a$08$V/En.8vnZFWGOwXvDvFYsO8PTq.KSA5eYTehICnErFnd3V.zzsj.K',
         'admins' => array(
-            'bill' => '$2a$08$bCVTtxqH/VxWuHqrZQ/QiOEcvvbVjl9UD3mTf.7AnXhS90DXj5IZ6'
+            'john' => '$2a$08$bCVTtxqH/VxWuHqrZQ/QiOEcvvbVjl9UD3mTf.7AnXhS90DXj5IZ6'
         )
     ),
     'family' => array(
@@ -44,19 +44,11 @@ $config['rights'] = array(
 
 ### Users and groups
 
-The setting `users` is an array of users and hashed passwords.
-
-> **Encryption** : Passwords should be hashed with `bcrypt`. If [password_hash](https://secure.php.net/manual/en/function.password-hash.php) is not supported (PHP<5.5), you can add `bcrypt` support by placing [ircmaxell/password_compat](https://github.com/ircmaxell/password_compat) in a `lib/` directory next to PicoUsers. Finally, a simple hash algorythm can be used as a fallback (`sha256` by default, can be configured with the `hash_type` setting).
+The setting `users` is an array of user names and `bcrypt` hashed passwords.
 
 You can create groups of users by using sub-arrays, and nest groups to create hierarchical systems.
 
-    john => hash
-    editors
-        marc => hash
-        admins
-            bill => hash
-
-Users are defined by their user path. In the previous example, we have three users : `john` and `editors/marc` and `editors/admins/bill`. Bill will inherit the rights of its two groups, when john don't have the rights of any group.
+Users are defined by their user path. In the previous example, the users `john` and `editors/admins/john` are two distinct users. "Admin John" will inherit the rights of its two groups, when "just John" don't have the rights of any group.
 
 ### Rights
 
