@@ -128,19 +128,18 @@ final class PicoUsers extends AbstractPicoPlugin
             session_start();
         }
         $fp = $this->fingerprint();
-        $post = $_POST; // to sanitize ?
 
         // logout action
-        if (isset($post['logout'])) {
+        if (isset($_POST['logout'])) {
             unset($_SESSION[$fp]);
             return;
         }
         
         // login action
-        if (isset($post['login'])
-        && isset($post['hashedpass'])) {
-            $hashedpass = hash($this->hash_type, $post['hashedpass']);
-            return $this->login($post['login'], $hashedpass, $fp);
+        if (isset($_POST['login'])
+        && isset($_POST['hashedpass'])) {
+            $hashedpass = hash($this->hash_type, $_POST['hashedpass']);
+            return $this->login($_POST['login'], $hashedpass, $fp);
         }
 
         // session login (already logged)
