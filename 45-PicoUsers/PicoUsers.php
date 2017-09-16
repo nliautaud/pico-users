@@ -11,7 +11,7 @@ require_once('password.php');
  * @link	https://github.com/nliautaud/pico-users
  * @link    http://picocms.org
  * @license http://opensource.org/licenses/MIT The MIT License
- * @version 0.2.2
+ * @version 0.2.3
  */
 final class PicoUsers extends AbstractPicoPlugin
 {
@@ -52,15 +52,15 @@ final class PicoUsers extends AbstractPicoPlugin
      */
      public function onRequestUrl(&$url)
      {
-        $page_url = rtrim($url, '/');
-        if (!$this->is_authorized($this->base_url . $page_url)) {
+        if (!$this->is_authorized($this->base_url . $url)) {
             $url = '403';
             header('HTTP/1.1 403 Forbidden');
         }
     }
     /**
+     * Hide 403 and unauthorized pages.
+     * 
      * Triggered after Pico has read all known pages
-     *
      * See {@link DummyPlugin::onSinglePageLoaded()} for details about the
      * structure of the page data.
      *
@@ -81,7 +81,7 @@ final class PicoUsers extends AbstractPicoPlugin
         array &$nextPage = null
     ) {
         foreach ($pages as $id => $page ) {
-            if (!$this->is_authorized(rtrim($page['url'], '/'))) {
+            if ($id == '403' || !$this->is_authorized($page['url'])) {
                 unset($pages[$id]);
             }
         }
@@ -124,7 +124,7 @@ final class PicoUsers extends AbstractPicoPlugin
             unset($_SESSION[$fp]);
             return;
         }
-        
+
         // login action
         if (isset($_POST['login'])
         && isset($_POST['pass'])) {
@@ -140,7 +140,7 @@ final class PicoUsers extends AbstractPicoPlugin
         $path = $_SESSION[$fp]['path'];
         $hash = $_SESSION[$fp]['hash'];
         $user = $this->get_user($path);
-        
+
         if ($user['hash'] === $hash) {
             $this->log_user($user, $fp);
         }
@@ -210,7 +210,7 @@ final class PicoUsers extends AbstractPicoPlugin
             }
 
             if ($name !== null && $name !== $username) continue;
-            
+
             if (!password_verify($pass, $userdata)) continue;
 
             $results[] = array(
@@ -245,6 +245,7 @@ final class PicoUsers extends AbstractPicoPlugin
     private function is_authorized($url)
     {
         if (!$this->rights) return true;
+        $url = rtrim($url, '/');
         foreach ($this->rights as $auth_path => $auth_user )
         {
             // url is concerned by this rule and user is not (unauthorized)
