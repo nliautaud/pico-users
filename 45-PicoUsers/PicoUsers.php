@@ -13,20 +13,12 @@ require_once('password.php');
  * @license http://opensource.org/licenses/MIT The MIT License
  * @version 0.2.3
  */
-final class PicoUsers extends AbstractPicoPlugin
+class PicoUsers extends AbstractPicoPlugin
 {
     private $user;
     private $users;
     private $rights;
     private $base_url;
-
-    /**
-     * This plugin is enabled by default
-     *
-     * @see AbstractPicoPlugin::$enabled
-     * @var boolean
-     */
-     protected $enabled = true;
 
     /**
      * Triggered after Pico has read its configuration
