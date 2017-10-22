@@ -78,7 +78,7 @@ For example :
     (<input type="submit" name="logout" value="logout" />)
 {% else %}
     <input type="text" name="login" />
-    <input type="password" name="password" />
+    <input type="password" name="pass" />
     <input type="submit" value="login" />
 {% endif %}
 </form>
