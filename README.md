@@ -52,9 +52,23 @@ Users are defined by their user path. In the previous example, the users `john` 
 
 ### Rights
 
-The setting `rights` is a flat list of rules, associating an URL to a user or a group of users to whom this path is reserved.
+The setting `rights` is a flat list of rules, associating a rule to a user or a group of users.
 
-You can target a specific page or all pages in a directory by using or not a trailing slash.
+> Note that you can target a specific path or all sub-paths by using or not a trailing slash.
+
+PicoUsers will use these rules as *rights to view a given page*, but other plugins may define other meanings. Edits rights in [Pico Content Editor](https://github.com/nliautaud/pico-content-editor) for example :
+
+```php
+$config['rights'] = array(
+    'PicoContentEditor/save' => 'admins'
+);
+```
+
+You can check for a specific right in your theme with the following Twig function :
+
+```twig
+{% if user_has_right('some/rule') %}
+```
 
 ## Login and logout
 

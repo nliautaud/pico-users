@@ -27,8 +27,8 @@ class PicoUsers extends AbstractPicoPlugin
      * @param  array &$config array of config variables
      * @return void
      */
-     public function onConfigLoaded(array &$config)
-     {
+    public function onConfigLoaded(array &$config)
+    {
         $this->base_url = rtrim($config['base_url'], '/') . '/';
         $this->users = @$config['users'];
         $this->rights = @$config['rights'];
@@ -42,9 +42,9 @@ class PicoUsers extends AbstractPicoPlugin
      * @param  string &$url part of the URL describing the requested contents
      * @return void
      */
-     public function onRequestUrl(&$url)
-     {
-        if (!$this->is_authorized($this->base_url . $url)) {
+    public function onRequestUrl(&$url)
+    {
+        if (!$this->hasRight($url, true)) {
             $url = '403';
             header('HTTP/1.1 403 Forbidden');
         }
@@ -73,7 +73,7 @@ class PicoUsers extends AbstractPicoPlugin
         array &$nextPage = null
     ) {
         foreach ($pages as $id => $page ) {
-            if ($id == '403' || !$this->is_authorized($page['url'])) {
+            if ($id == '403' || !$this->hasRight($page['url'], true)) {
                 unset($pages[$id]);
             }
         }
@@ -96,6 +96,8 @@ class PicoUsers extends AbstractPicoPlugin
             $twigVariables['username'] = basename($this->user);
             $twigVariables['usergroup'] = dirname($this->user);
         }
+        // {{ user_has_right('rule') }}
+        $twig->addFunction(new Twig_SimpleFunction('user_has_right', array($this, 'hasRight')));
     }
 
 
@@ -230,24 +232,23 @@ class PicoUsers extends AbstractPicoPlugin
     }
 
     /**
-     * Return if the user is allowed to see the given page url.
-     * @param  string  $url a page url
+     * Return if the user has the given right.
+     * @param  string  $rule
+     * @param  string  $default The default status if no corresponding rule is found.
      * @return boolean
      */
-    private function is_authorized($url)
+    public function hasRight($rule, $default = false)
     {
-        if (!$this->rights) return true;
-        $url = rtrim($url, '/');
-        foreach ($this->rights as $auth_path => $auth_user )
+        if (!$this->rights) return $default;
+        foreach ($this->rights as $auth_rule => $auth_user )
         {
-            // url is concerned by this rule and user is not (unauthorized)
-            if ($this->is_parent_path($this->base_url . $auth_path, $url)
-            && !$this->is_parent_path($auth_user, $this->user) )
-            {
-                return false;
+            if ($this->is_parent_path($auth_rule, $rule)) {
+                $isCurrentUser = $this->is_parent_path($auth_user, $this->user);
+                if ($default == true && !$isCurrentUser) return false;
+                if ($default == false && $isCurrentUser) return true;
             }
         }
-        return true;
+        return $default;
     }
     /**
      * Return if a path is parent of another.
@@ -259,8 +260,8 @@ class PicoUsers extends AbstractPicoPlugin
      */
     private static function is_parent_path($parent, $child)
     {
-        if (!$parent || !$child) return false;
-        if (	$parent == $child) return true;
+        if (!$parent || !$child) return false; 
+        if ($parent == $child) return true;
 
         if (strpos($child, $parent) === 0) {
             if (substr($parent,-1) == '/') return true;
