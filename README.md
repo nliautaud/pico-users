@@ -18,28 +18,23 @@ Copy the `PicoUsers` directory to the `plugins/` directory of your Pico Project.
 
 ## Settings
 
-Users, rights and others settings should be stored in Pico `config/config.php` file.
+Users, rights and others settings can be defined in Pico config file.
 
-```php
-$config['users'] = array(
-    'john' => '$2a$08$kA7StQeZgyuEJnIrvypwEeuyjSqxrvavOBSf33n4yWSJFhbQAkO1W',
-    'editors' => array(
-        'marc' => '$2a$08$V/En.8vnZFWGOwXvDvFYsO8PTq.KSA5eYTehICnErFnd3V.zzsj.K',
-        'admins' => array(
-            'john' => '$2a$08$bCVTtxqH/VxWuHqrZQ/QiOEcvvbVjl9UD3mTf.7AnXhS90DXj5IZ6'
-        )
-    ),
-    'family' => array(
-        'mum' => '$2a$08$qYtklDGOy/cCK1K0Zh8qROkFW3/V7gFgve.0GQv/sPmLYHm0jEiTi',
-        'dad' => '$2a$08$Eu7aKmOLz1Jme4iReWp6r.TfI2K3V3DyeRDV8oBS6gMtDPessqqru'
-    )
-);
-$config['rights'] = array(
-    'family-things' => 'family',
-    'secret/infos' => 'editors',
-    'secret/infos/' => 'editors/admins',
-    'just-for-john' => 'john'
-);
+```yml
+users:
+    john: $2a$08$kA7StQeZgyuEJnIrvypwEeuyjSqxrvavOBSf33n4yWSJFhbQAkO1W
+    editors:
+        marc: $2a$08$V/En.8vnZFWGOwXvDvFYsO8PTq.KSA5eYTehICnErFnd3V.zzsj.K
+        admins:
+            john: $2a$08$bCVTtxqH/VxWuHqrZQ/QiOEcvvbVjl9UD3mTf.7AnXhS90DXj5IZ6
+    family:
+        mum: $2a$08$qYtklDGOy/cCK1K0Zh8qROkFW3/V7gFgve.0GQv/sPmLYHm0jEiTi
+        dad: $2a$08$Eu7aKmOLz1Jme4iReWp6r.TfI2K3V3DyeRDV8oBS6gMtDPessqqru
+rights:
+    family-things: family
+    secret/infos: editors
+    secret/infos/: editors/admins
+    just-for-john: john
 ```
 
 ### Users and groups
@@ -56,12 +51,12 @@ The setting `rights` is a flat list of rules, associating a rule to a user or a 
 
 > Note that you can target a specific path or all sub-paths by using or not a trailing slash.
 
-PicoUsers will use these rules as *rights to view a given page*, but other plugins may define other meanings. Edits rights in [Pico Content Editor](https://github.com/nliautaud/pico-content-editor) for example :
+PicoUsers will use these rules as *rights to view pages*, but other plugins may define other meanings, like editing in [Pico Content Editor](https://github.com/nliautaud/pico-content-editor).
 
-```php
-$config['rights'] = array(
-    'PicoContentEditor/save' => 'admins'
-);
+```yml
+rights:
+    some/path/page: editors
+    PicoContentEditor/save: admins
 ```
 
 You can check for a specific right in your theme with the following Twig function :
