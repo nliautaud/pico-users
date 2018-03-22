@@ -16,6 +16,8 @@ Features login and logout system, unlimited users and hierarchical user groups, 
 
 Copy the `PicoUsers` directory to the `plugins/` directory of your Pico Project.
 
+*Note that the directory numerical prefix is needed to ensure the Pico plugins loading order.*
+
 ## Settings
 
 Users, rights and others settings should be stored in Pico `config/config.php` file.
