@@ -14,7 +14,9 @@ Features login and logout system, unlimited users and hierarchical user groups, 
 
 ## Installation
 
-Copy the `PicoUsers` directory to the `plugins/` directory of your Pico Project.
+Copy the `45-PicoUsers` directory to the `plugins/` directory of your Pico Project.
+
+*Note that the directory numerical prefix is needed to ensure the Pico plugins loading order.*
 
 ## Settings
 
