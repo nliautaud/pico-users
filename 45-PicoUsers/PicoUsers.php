@@ -5,16 +5,17 @@
  */
 require_once('password.php');
 /**
- * A hierarchical users and rights system plugin for Pico.
+ * A hierarchical users and rights system plugin for Pico 2.
  *
  * @author	Nicolas Liautaud
  * @link	https://github.com/nliautaud/pico-users
  * @link    http://picocms.org
  * @license http://opensource.org/licenses/MIT The MIT License
- * @version 0.2.3
  */
 class PicoUsers extends AbstractPicoPlugin
 {
+    const API_VERSION = 2;
+
     private $user;
     private $users;
     private $rights;
@@ -52,26 +53,14 @@ class PicoUsers extends AbstractPicoPlugin
     /**
      * Hide 403 and unauthorized pages.
      * 
-     * Triggered after Pico has read all known pages
-     * See {@link DummyPlugin::onSinglePageLoaded()} for details about the
-     * structure of the page data.
+     * Triggered after Pico has discovered all known pages
      *
-     * @see    Pico::getPages()
-     * @see    Pico::getCurrentPage()
-     * @see    Pico::getPreviousPage()
-     * @see    Pico::getNextPage()
-     * @param  array[]    &$pages        data of all known pages
-     * @param  array|null &$currentPage  data of the page being served
-     * @param  array|null &$previousPage data of the previous page
-     * @param  array|null &$nextPage     data of the next page
+     * @see DummyPlugin::onPagesLoading()
+     * @see DummyPlugin::onPagesLoaded()
+     * @param array[] &$pages list of all known pages
      * @return void
      */
-    public function onPagesLoaded(
-        array &$pages,
-        array &$currentPage = null,
-        array &$previousPage = null,
-        array &$nextPage = null
-    ) {
+    public function onPagesDiscovered(array &$pages) {
         foreach ($pages as $id => $page ) {
             if ($id == '403' || !$this->hasRight($page['url'], true)) {
                 unset($pages[$id]);
@@ -79,16 +68,16 @@ class PicoUsers extends AbstractPicoPlugin
         }
     }
     /**
+     * Add various twig variables.
+     * 
      * Triggered before Pico renders the page
      *
-     * @see    Pico::getTwig()
-     * @see    DummyPlugin::onPageRendered()
-     * @param  Twig_Environment &$twig          twig template engine
-     * @param  array            &$twigVariables template variables
-     * @param  string           &$templateName  file name of the template
+     * @see DummyPlugin::onPageRendered()
+     * @param string &$templateName  file name of the template
+     * @param array  &$twigVariables template variables
      * @return void
      */
-    public function onPageRendering(Twig_Environment &$twig, array &$twigVariables, &$templateName)
+    public function onPageRendering(&$templateName, array &$twigVariables)
     {
         $twigVariables['login_form'] = $this->html_form();
         if ($this->user) {
@@ -96,7 +85,18 @@ class PicoUsers extends AbstractPicoPlugin
             $twigVariables['username'] = basename($this->user);
             $twigVariables['usergroup'] = dirname($this->user);
         }
-        // {{ user_has_right('rule') }}
+    }
+    /**
+     * Add {{ user_has_right('rule') }} twig function.
+     * 
+     * Triggered when Pico registers the twig template engine
+     *
+     * @see Pico::getTwig()
+     * @param Twig_Environment &$twig Twig instance
+     * @return void
+     */
+    public function onTwigRegistered(Twig_Environment &$twig)
+    {
         $twig->addFunction(new Twig_SimpleFunction('user_has_right', array($this, 'hasRight')));
     }
 
