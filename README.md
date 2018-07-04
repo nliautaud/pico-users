@@ -1,16 +1,14 @@
 # Pico Users
 
-A hierarchical users and rights system plugin for [Pico CMS](http://pico.dev7studios.com). There is a port for [Phile CMS](https://github.com/PhileCMS/Phile) by [pschmitt](https://github.com/pschmitt) : [phileUsers](https://github.com/pschmitt/phileUsers).
+A hierarchical users and rights system plugin for [Pico CMS](https://github.com/picocms/Pico).
 
-Features login and logout system, unlimited users and hierarchical user groups, simple rights management.
-
-* [Installation](#installation)
-* [Settings](#users-and-groups)
-  * [Users and groups](#users-and-groups)
-  * [Rights](#rights)
-* [Login and logout](#login-and-logout)
-* [Error page](#error-page)
-
+- Login and logout
+- Unlimited users and hierarchical user groups
+- Simple rights management
+- Pages and directories restrictions
+- 403 Unauthorized error page
+- Twig variables and utilities for theming
+- API for other plugins (ex. [Pico Content Editor](https://github.com/nliautaud/pico-content-editor))
 
 ## Installation
 
