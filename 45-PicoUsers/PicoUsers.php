@@ -7,8 +7,8 @@ require_once('password.php');
 /**
  * A hierarchical users and rights system plugin for Pico 2.
  *
- * @author	Nicolas Liautaud
- * @link	https://github.com/nliautaud/pico-users
+ * @author  Nicolas Liautaud
+ * @link    https://github.com/nliautaud/pico-users
  * @link    http://picocms.org
  * @license http://opensource.org/licenses/MIT The MIT License
  */
@@ -34,7 +34,7 @@ class PicoUsers extends AbstractPicoPlugin
         $this->users = @$config['users'];
         $this->rights = @$config['rights'];
         $this->user = '';
-        $this->check_login();
+        $this->checkLogin();
     }
     /**
      * Triggered after Pico has evaluated the request URL
@@ -52,7 +52,7 @@ class PicoUsers extends AbstractPicoPlugin
     }
     /**
      * Hide 403 and unauthorized pages.
-     * 
+     *
      * Triggered after Pico has discovered all known pages
      *
      * @see DummyPlugin::onPagesLoading()
@@ -60,8 +60,9 @@ class PicoUsers extends AbstractPicoPlugin
      * @param array[] &$pages list of all known pages
      * @return void
      */
-    public function onPagesDiscovered(array &$pages) {
-        foreach ($pages as $id => $page ) {
+    public function onPagesDiscovered(array &$pages)
+    {
+        foreach ($pages as $id => $page) {
             if ($id == '403' || !$this->hasRight($page['url'], true)) {
                 unset($pages[$id]);
             }
@@ -69,7 +70,7 @@ class PicoUsers extends AbstractPicoPlugin
     }
     /**
      * Add various twig variables.
-     * 
+     *
      * Triggered before Pico renders the page
      *
      * @see DummyPlugin::onPageRendered()
@@ -79,7 +80,7 @@ class PicoUsers extends AbstractPicoPlugin
      */
     public function onPageRendering(&$templateName, array &$twigVariables)
     {
-        $twigVariables['login_form'] = $this->html_form();
+        $twigVariables['login_form'] = $this->htmlLoginForm();
         if ($this->user) {
             $twigVariables['user'] = $this->user;
             $twigVariables['username'] = basename($this->user);
@@ -88,7 +89,7 @@ class PicoUsers extends AbstractPicoPlugin
     }
     /**
      * Add {{ user_has_right('rule') }} twig function.
-     * 
+     *
      * Triggered when Pico registers the twig template engine
      *
      * @see Pico::getTwig()
@@ -106,7 +107,7 @@ class PicoUsers extends AbstractPicoPlugin
     /*
      * Check logout/login actions and session login.
      */
-    function check_login()
+    private function checkLogin()
     {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
@@ -122,29 +123,34 @@ class PicoUsers extends AbstractPicoPlugin
         // login action
         if (isset($_POST['login'])
         && isset($_POST['pass'])) {
-            $users = $this->search_users($_POST['login'], $_POST['pass']);
-            if (!$users) return;
-            $this->log_user($users[0], $fp);
+            $users = $this->searchUsers($_POST['login'], $_POST['pass']);
+            if (!$users) {
+                return;
+            }
+            $this->logUser($users[0], $fp);
             return;
         }
 
         // session login (already logged)
-        if (!isset($_SESSION[$fp])) return;
+        if (!isset($_SESSION[$fp])) {
+            return;
+        }
 
         $path = $_SESSION[$fp]['path'];
         $hash = $_SESSION[$fp]['hash'];
-        $user = $this->get_user($path);
+        $user = $this->getUser($path);
 
         if ($user['hash'] === $hash) {
-            $this->log_user($user, $fp);
+            $this->logUser($user, $fp);
+        } else {
+            unset($_SESSION[$fp]);
         }
-        else unset($_SESSION[$fp]);
     }
     /**
      * Return session fingerprint hash.
      * @return string
      */
-    function fingerprint()
+    private function fingerprint()
     {
         return hash('sha256', 'pico'
                 .$_SERVER['HTTP_USER_AGENT']
@@ -157,7 +163,7 @@ class PicoUsers extends AbstractPicoPlugin
      * @param string $user the user infos
      * @param string $fp session fingerprint hash
      */
-    function log_user($user, $fp)
+    private function logUser($user, $fp)
     {
         $this->user = $user['path'];
         $_SESSION[$fp] = $user;
@@ -165,15 +171,16 @@ class PicoUsers extends AbstractPicoPlugin
     /*
      * Return a simple login / logout form.
      */
-    function html_form()
+    private function htmlLoginForm()
     {
-        if (!$this->user) return '
-        <form method="post" action="">
-            <input type="text" name="login" />
-            <input type="password" name="pass" />
-            <input type="submit" value="login" />
-        </form>';
-
+        if (!$this->user) {
+            return '
+            <form method="post" action="">
+                <input type="text" name="login" />
+                <input type="password" name="pass" />
+                <input type="submit" value="login" />
+            </form>';
+        }
         $userGroup = dirname($this->user);
         return basename($this->user) . ($userGroup != '.' ? " ($userGroup)":'') . '
         <form method="post" action="" >
@@ -188,25 +195,29 @@ class PicoUsers extends AbstractPicoPlugin
      * @param  string $pass  the user pass
      * @return array  the list of results in pairs "path/group/username" => "hash"
      */
-    function search_users( $name, $pass, $users = null , $path = '' )
+    private function searchUsers($name, $pass, $users = null, $path = '')
     {
-        if ($users === null) $users = $this->users;
-        if ($path) $path .= '/';
+        if ($users === null) {
+            $users = $this->users;
+        }
+        if ($path) {
+            $path .= '/';
+        }
         $results = array();
-        foreach ($users as $username => $userdata)
-        {
+        foreach ($users as $username => $userdata) {
             if (is_array($userdata)) {
                 $results = array_merge(
                     $results,
-                    $this->search_users($name, $pass, $userdata, $path.$username)
+                    $this->searchUsers($name, $pass, $userdata, $path.$username)
                 );
                 continue;
             }
-
-            if ($name !== null && $name !== $username) continue;
-
-            if (!password_verify($pass, $userdata)) continue;
-
+            if ($name !== null && $name !== $username) {
+                continue;
+            }
+            if (!password_verify($pass, $userdata)) {
+                continue;
+            }
             $results[] = array(
                 'path' => $path.$username,
                 'hash' => $userdata);
@@ -218,19 +229,21 @@ class PicoUsers extends AbstractPicoPlugin
       * @param  string $name  the user path, like "foo/bar"
       * @return array  the user data
       */
-    function get_user( $path )
+    private function getUser($path)
     {
         $parts = explode('/', $path);
         $curr = $this->users;
         foreach ($parts as $part) {
-			if(!isset($curr[$part])) return false;
+            if (!isset($curr[$part])) {
+                return false;
+            }
             $curr = $curr[$part];
         }
         return array(
-			'path' => $path,
-			'hash' => $curr);
+            'path' => $path,
+            'hash' => $curr
+        );
     }
-
     /**
      * Return if the user has the given right.
      * @param  string  $rule
@@ -239,35 +252,45 @@ class PicoUsers extends AbstractPicoPlugin
      */
     public function hasRight($rule, $default = false)
     {
-        if (!$this->rights) return $default;
-        foreach ($this->rights as $auth_rule => $auth_user )
-        {
-            if ($this->is_parent_path($auth_rule, $rule)) {
-                $isCurrentUser = $this->is_parent_path($auth_user, $this->user);
-                if ($default == true && !$isCurrentUser) return false;
-                if ($default == false && $isCurrentUser) return true;
+        if (!$this->rights) {
+            return $default;
+        }
+        foreach ($this->rights as $auth_rule => $auth_user) {
+            if ($this->isParentPath($auth_rule, $rule)) {
+                $isCurrentUser = $this->isParentPath($auth_user, $this->user);
+                if ($default == true && !$isCurrentUser) {
+                    return false;
+                }
+                if ($default == false && $isCurrentUser) {
+                    return true;
+                }
             }
         }
         return $default;
     }
     /**
      * Return if a path is parent of another.
-     * 	some/path is parent of some/path/child
-     *  some/path is not parent of some/another/path
+     * some/path is parent of some/path/child
+     * some/path is not parent of some/another/path
      * @param  string  $parent the parent (shorter) path
      * @param  string  $child  the child (longer) path
      * @return boolean
      */
-    private static function is_parent_path($parent, $child)
+    private static function isParentPath($parent, $child)
     {
-        if (!$parent || !$child) return false; 
-        if ($parent == $child) return true;
-
+        if (!$parent || !$child) {
+            return false;
+        }
+        if ($parent == $child) {
+            return true;
+        }
         if (strpos($child, $parent) === 0) {
-            if (substr($parent,-1) == '/') return true;
-            elseif ($child[strlen($parent)] == '/') return true;
+            if (substr($parent, -1) == '/') {
+                return true;
+            } elseif ($child[strlen($parent)] == '/') {
+                return true;
+            }
         }
         return false;
     }
 }
-?>
