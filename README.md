@@ -18,8 +18,6 @@ Copy the `45-PicoUsers` directory to the `plugins/` directory of your Pico Proje
 
 *Note that the directory numerical prefix is needed to ensure the Pico plugins loading order.*
 
-*Note that the directory numerical prefix is needed to ensure the Pico plugins loading order.*
-
 ## Settings
 
 Users, rights and others settings can be defined in Pico config file.
