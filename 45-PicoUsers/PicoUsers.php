@@ -252,6 +252,8 @@ class PicoUsers extends AbstractPicoPlugin
      */
     public function hasRight($rule, $default = false)
     {
+        $rule = ltrim($rule, '/');
+        $rule = preg_replace('(\/{2,})', '/', $rule);
         if (!$this->rights) {
             return $default;
         }
